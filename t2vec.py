@@ -21,8 +21,10 @@ def setArgs():
     parser = argparse.ArgumentParser(description="train.py")
     # 增加是否为toy状态的，toy状态为小范围的测试数据
     parser.add_argument("-isToy", default= True, help="Set True if we are using toy data")
-    parser.add_argument("-data", default= os.path.join(os.getcwd(),'data'), help="Path to training and validating data")
-    parser.add_argument("-checkpoint", default= os.path.join(os.getcwd(),'data','checkpoint.pt'), help="The saved checkpoint")
+    parser.add_argument("-data", default= os.path.join(os.getcwd(),'toydata'), help="Path to training and validating data")
+    parser.add_argument("-checkpoint", default= os.path.join(os.getcwd(),'toydata','checkpoint.pt'), help="The saved checkpoint")
+    parser.add_argument("-knearestvocabs", default=os.path.join(os.getcwd(), 'toydata', 'porto-vocab-dist-cell100.h5'),
+      help="""The file of k nearest cells and distances used in KLDIVLoss,produced by preprocessing, necessary if KLDIVLoss is used""")
     parser.add_argument("-prefix", default="exp", help="Prefix of trjfile")
     parser.add_argument("-pretrained_embedding", default=None, help="Path to the pretrained word (cell) embedding")
     parser.add_argument("-num_layers", type=int, default=3, help="Number of layers in the RNN cell")
@@ -43,14 +45,12 @@ def setArgs():
     parser.add_argument("-use_discriminative", action="store_true", default=True, help="Use the discriminative loss if the argument is given")
     parser.add_argument("-discriminative_w", type=float, default=0.1, help="discriminative loss weight")
     parser.add_argument("-criterion_name", default="KLDIV",help="NLL (Negative Log Likelihood) or KLDIV (KL Divergence)")
-    parser.add_argument("-knearestvocabs", default=os.path.join(os.getcwd(),'data','porto-vocab-dist-cell100.h5'),
-        help="""The file of k nearest cells and distances used in KLDIVLoss,produced by preprocessing, necessary if KLDIVLoss is used""")
     parser.add_argument("-dist_decay_speed", type=float, default=0.8,
         help="""How fast the distance decays in dist2weight, a small value will give high weights for cells far away""")
     parser.add_argument("-max_num_line", type=int, default=20000)
     parser.add_argument("-max_length", default=200, help="The maximum length of the target sequence")
     parser.add_argument("-mode", type=int, default=0, help="Running mode (0: train, 1:evaluate, 2:t2vec)")
-    parser.add_argument("-vocab_size", type=int, default=18866,help="Vocabulary Size")
+    parser.add_argument("-vocab_size", type=int, default=1000,help="Vocabulary Size")
     parser.add_argument("-bucketsize", default=[(20,30),(30,30),(30,50),(50,50),(50,70),(70,70),(70,100),(100,100)],help="Bucket size for training")
     # 新增迭代次数参数
     parser.add_argument("-iter_num", default=1000000,help="总的训练迭代次数")
