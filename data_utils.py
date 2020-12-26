@@ -126,10 +126,9 @@ class DataLoader():
     validate: if validate = True return batch orderly otherwise return
         batch randomly
     """
-    def __init__(self, srcfile, trgfile, mtafile, batch, bucketsize, validate=False):
+    def __init__(self, srcfile, trgfile, batch, bucketsize, validate=False):
         self.srcfile = srcfile
         self.trgfile = trgfile
-        self.mtafile = mtafile
 
         self.batch = batch
         self.validate = validate
@@ -137,12 +136,11 @@ class DataLoader():
         self.bucketsize = bucketsize
 
     # 插入8组不同的轨迹长度范围的轨迹到轨迹中，对于每一条src轨迹和目标轨迹，判断它们的长度并加入到到对应列表中
-    def insert(self, s, t, m):
+    def insert(self, s, t):
         for i in range(len(self.bucketsize)):
             if len(s) <= self.bucketsize[i][0] and len(t) <= self.bucketsize[i][1]:
                 self.srcdata[i].append(np.array(s, dtype=np.int32))
                 self.trgdata[i].append(np.array(t, dtype=np.int32))
-                self.mtadata[i].append(np.array(m, dtype=np.float32))
                 return 1
         return 0
 
@@ -150,16 +148,16 @@ class DataLoader():
     def load(self, max_num_line=0):
         self.srcdata = [[] for _ in range(len(self.bucketsize))]
         self.trgdata = [[] for _ in range(len(self.bucketsize))]
-        self.mtadata = [[] for _ in range(len(self.bucketsize))]
 
-        srcstream, trgstream, mtastream = open(self.srcfile, 'r'), open(self.trgfile, 'r'), open(self.mtafile, 'r')
+
+        srcstream, trgstream = open(self.srcfile, 'r'), open(self.trgfile, 'r')
         num_line = 0
         with tqdm(total=max_num_line, desc='Reading Traj', leave=True, ncols=100, unit='B', unit_scale=True) as pbar:
-            for (s, t, m) in zip(srcstream, trgstream, mtastream):
+            for (s, t) in zip(srcstream, trgstream):
                 s = [int(x) for x in s.split()]
                 t = [constants.BOS] + [int(x) for x in t.split()] + [constants.EOS]
-                m = [float(x) for x in m.split()]
-                num_line += self.insert(s, t, m)
+
+                num_line += self.insert(s, t)
                 pbar.update(1)
                 if num_line >= max_num_line and max_num_line > 0: break
                 # if num_line % 500000 == 0:
@@ -169,18 +167,18 @@ class DataLoader():
         if self.validate == True:
             self.srcdata = np.array(merge(*self.srcdata))
             self.trgdata = np.array(merge(*self.trgdata))
-            self.mtadata = np.array(merge(*self.mtadata))
+
 
             self.start = 0
             self.size = len(self.srcdata)
         else:
             self.srcdata = list(map(np.array, self.srcdata))
             self.trgdata = list(map(np.array, self.trgdata))
-            self.mtadata = list(map(np.array, self.mtadata))
+
 
             self.allocation = list(map(len, self.srcdata))
             self.p = np.array(self.allocation) / sum(self.allocation)
-        srcstream.close(), trgstream.close(), mtastream.close()
+        srcstream.close(), trgstream.close()
 
     # 有序加载轨迹集合 或者 无序加载轨迹集合
     # validate == true 有序加载
@@ -189,13 +187,12 @@ class DataLoader():
         if self.validate == True:
             src = self.srcdata[self.start:self.start+self.batch]
             trg = self.trgdata[self.start:self.start+self.batch]
-            mta = self.mtadata[self.start:self.start+self.batch]
 
             ## update `start` for next batch
             self.start += self.batch
             if self.start >= self.size:
                 self.start = 0
-            return list(src), list(trg), list(mta)
+            return list(src), list(trg)
         else:
             ## select bucket
             sample = np.random.multinomial(1, self.p)
@@ -204,13 +201,13 @@ class DataLoader():
             idx = np.random.choice(len(self.srcdata[bucket]), self.batch)
             src = self.srcdata[bucket][idx]
             trg = self.trgdata[bucket][idx]
-            mta = self.mtadata[bucket][idx]
-            return list(src), list(trg), list(mta)
+
+            return list(src), list(trg)
 
     # 返回一组batch个数的 TF对象，排序加补位操作
     # 返回形式 ['src', 'lengths', 'trg', 'invp']
     def getbatch_generative(self):
-        src, trg, _ = self.getbatch_one()
+        src, trg = self.getbatch_one()
         # src (seq_len1, batch), lengths (1, batch), trg (seq_len2, batch)
         return pad_arrays_pair(src, trg, keep_invp=False)
 
@@ -220,9 +217,9 @@ class DataLoader():
         # 求二范数
         def distance(x, y):
             return np.linalg.norm(x - y)
-        a_src, a_trg, a_mta = self.getbatch_one()
-        p_src, p_trg, p_mta = self.getbatch_one()
-        n_src, n_trg, n_mta = self.getbatch_one()
+        a_src, a_trg = self.getbatch_one()
+        p_src, p_trg = self.getbatch_one()
+        n_src, n_trg = self.getbatch_one()
 
         #p_src, p_trg, p_mta = copy.deepcopy(p_src), copy.deepcopy(p_trg), copy.deepcopy(p_mta)
         #n_src, n_trg, n_mta = copy.deepcopy(n_src), copy.deepcopy(n_trg), copy.deepcopy(n_mta)
@@ -257,7 +254,7 @@ class DataLoader():
         p_src, p_trg = [], []
         n_src, n_trg = [], []
 
-        _, trgs, _ = self.getbatch_one()
+        _, trgs = self.getbatch_one()
         for i in range(len(trgs)):
             trg = trgs[i][1:-1]
             if len(trg) < 10: continue

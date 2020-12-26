@@ -152,8 +152,7 @@ def loadTrainDataAndValidateDate(args):
     # 加载训练集
     trainsrc = os.path.join(args.data, "train.src")
     traintrg = os.path.join(args.data, "train.trg")
-    trainmta = os.path.join(args.data, "train.mta")
-    trainData = DataLoader(trainsrc, traintrg, trainmta, args.batch, args.bucketsize)
+    trainData = DataLoader(trainsrc, traintrg, args.batch, args.bucketsize)
     print("Reading training data...")
     trainData.load(args.max_num_line)
     print("Allocation: {}".format(trainData.allocation))
@@ -162,7 +161,6 @@ def loadTrainDataAndValidateDate(args):
     # 如果存在验证集，加载验证集
     valsrc = os.path.join(args.data, "val.src")
     valtrg = os.path.join(args.data, "val.trg")
-    valmta = os.path.join(args.data, "val.mta")
     valData = 0
     if os.path.isfile(valsrc) and os.path.isfile(valtrg):
         valData = DataLoader(valsrc, valtrg, valmta, args.batch, args.bucketsize, True)
