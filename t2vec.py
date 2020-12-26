@@ -19,6 +19,8 @@ import torch
 
 def setArgs():
     parser = argparse.ArgumentParser(description="train.py")
+    # 增加是否为toy状态的，toy状态为小范围的测试数据
+    parser.add_argument("-isToy", default= True, help="Set True if we are using toy data")
     parser.add_argument("-data", default= os.path.join(os.getcwd(),'data'), help="Path to training and validating data")
     parser.add_argument("-checkpoint", default= os.path.join(os.getcwd(),'data','checkpoint.pt'), help="The saved checkpoint")
     parser.add_argument("-prefix", default="exp", help="Prefix of trjfile")
@@ -30,7 +32,7 @@ def setArgs():
     parser.add_argument("-dropout", type=float, default=0.2, help="The dropout probability")
     parser.add_argument("-max_grad_norm", type=float, default=5.0, help="The maximum gradient norm")
     parser.add_argument("-learning_rate", type=float, default=0.001)
-    parser.add_argument("-batch", type=int, default=128, help="The batch size")
+    parser.add_argument("-batch", type=int, default=64, help="The batch size")
     parser.add_argument("-generator_batch", type=int, default=32, help="The maximum number of words to generate each time.The higher value, the more memory requires.")
     parser.add_argument("-t2vec_batch", type=int, default=256, help="""The maximum number of trajs we encode each time in t2vec""")
     parser.add_argument("-start_iteration", type=int, default=0)
@@ -45,7 +47,7 @@ def setArgs():
         help="""The file of k nearest cells and distances used in KLDIVLoss,produced by preprocessing, necessary if KLDIVLoss is used""")
     parser.add_argument("-dist_decay_speed", type=float, default=0.8,
         help="""How fast the distance decays in dist2weight, a small value will give high weights for cells far away""")
-    parser.add_argument("-max_num_line", type=int, default=20000000)
+    parser.add_argument("-max_num_line", type=int, default=20000)
     parser.add_argument("-max_length", default=200, help="The maximum length of the target sequence")
     parser.add_argument("-mode", type=int, default=0, help="Running mode (0: train, 1:evaluate, 2:t2vec)")
     parser.add_argument("-vocab_size", type=int, default=18866,help="Vocabulary Size")

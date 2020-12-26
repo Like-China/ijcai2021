@@ -184,10 +184,10 @@ def setLossF(args):
             "{} does not exist".format(args.knearestvocabs)
         print("Loading vocab distance file {}...".format(args.knearestvocabs))
         with h5py.File(args.knearestvocabs,'r') as f:
-            V, D = f["V"][...], f["D"][...]
+            V, Ds,Dt = f["V"][...], f["Ds"][...],f["Dt"][...]
             # VD size = (vocal_size, 10) 第i行为第i个轨迹与其10个邻居
-            V, D = torch.LongTensor(V), torch.FloatTensor(D)
-        D = dist2weight(D, args.dist_decay_speed)
+            V, Ds,Dt = torch.LongTensor(V), torch.FloatTensor(Ds),torch.FloatTensor(Dt)
+        D = dist2weight(Ds, args.dist_decay_speed)+0.1*dist2weight(Dt, args.dist_decay_speed)
         if args.cuda and torch.cuda.is_available():
             V, D = V.cuda(), D.cuda()
         criterion = nn.KLDivLoss(reduction='sum')
@@ -200,7 +200,6 @@ def setLossF(args):
 def train(args):
     logging.basicConfig(filename=os.path.join(args.data, "training.log"), level=logging.INFO)
     trainData, valData = loadTrainDataAndValidateDate(args)
-
     # 创建损失函数，模型以及最优化训练
     lossF = setLossF(args)
     triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)

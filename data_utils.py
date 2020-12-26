@@ -6,6 +6,7 @@ from funcy import merge
 from collections import namedtuple
 import time
 from tqdm import tqdm
+import h5py
 
 # 将一个句子集合按照序列长度长大到小排列,返回id集合
 # 如src=[[1,2,3],[3,4,5,6],[2,3,4,56,3]] ，返回2，1，0
