@@ -65,6 +65,7 @@ def genLoss(gendata, m0, m1, lossF, args):
         input, lengths, target = input.cuda(), lengths.cuda(), target.cuda()
     ## (seq_len2, batch, hidden_size)
     output = m0(input, lengths, target)
+    
 
     batch = output.size(1)
     loss = 0
@@ -152,7 +153,8 @@ def loadTrainDataAndValidateDate(args):
     # 加载训练集
     trainsrc = os.path.join(args.data, "train.src")
     traintrg = os.path.join(args.data, "train.trg")
-    trainData = DataLoader(trainsrc, traintrg, args.batch, args.bucketsize)
+    trainmta = os.path.join(args.data, "train.mta")
+    trainData = DataLoader(trainsrc, traintrg, trainmta, args.batch, args.bucketsize)
     print("Reading training data...")
     trainData.load(args.max_num_line)
     print("Allocation: {}".format(trainData.allocation))
@@ -161,6 +163,7 @@ def loadTrainDataAndValidateDate(args):
     # 如果存在验证集，加载验证集
     valsrc = os.path.join(args.data, "val.src")
     valtrg = os.path.join(args.data, "val.trg")
+    valmta = os.path.join(args.data, "val.mta")
     valData = 0
     if os.path.isfile(valsrc) and os.path.isfile(valtrg):
         valData = DataLoader(valsrc, valtrg, valmta, args.batch, args.bucketsize, True)
@@ -182,10 +185,16 @@ def setLossF(args):
             "{} does not exist".format(args.knearestvocabs)
         print("Loading vocab distance file {}...".format(args.knearestvocabs))
         with h5py.File(args.knearestvocabs,'r') as f:
-            V, Ds,Dt = f["V"][...], f["Ds"][...],f["Dt"][...]
             # VD size = (vocal_size, 10) 第i行为第i个轨迹与其10个邻居
-            V, Ds,Dt = torch.LongTensor(V), torch.FloatTensor(Ds),torch.FloatTensor(Dt)
-        D = dist2weight(Ds, args.dist_decay_speed)+0.1*dist2weight(Dt, args.dist_decay_speed)
+            if args.isToy == True:
+                V, Ds,Dt = f["V"][...], f["Ds"][...],f["Dt"][...]
+                V, Ds,Dt = torch.LongTensor(V), torch.FloatTensor(Ds),torch.FloatTensor(Dt)
+                Ds, Dt = dist2weight(Ds, args.dist_decay_speed),dist2weight(Dt, args.dist_decay_speed)
+                D = (1-args.timeWeight)*Ds + args.timeWeight*Dt
+            else:
+                V,D = f["V"][...],f["D"][...]
+                V,D = torch.LongTensor(V), torch.FloatTensor(D)
+                D = dist2weight(D, args.dist_decay_speed)
         if args.cuda and torch.cuda.is_available():
             V, D = V.cuda(), D.cuda()
         criterion = nn.KLDivLoss(reduction='sum')

@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['simuTrjGenerator.py', 'data_utils.py']
+recent_files = ['train.py', 'data_utils.py', 't2vec.py', 'Loader.py', 'models.py', 'simuTrjGenerator.py', 'D:\\ana3\\lib\\site-packages\\torch\\nn\\modules\\module.py', 'D:\\ana3\\lib\\site-packages\\torch\\nn\\modules\\sparse.py']
 
